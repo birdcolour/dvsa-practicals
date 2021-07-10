@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "dvsa-practicals"
+version = "0.1.0"
+description = "Watch the DVSA site for cancellations of practical driving tests, using Python and Selenium."
+authors = ["birdcolour <birdcolour@users.noreply.github.com>"]
+packages = [
+    { include = "main.py" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+selenium = "^3.141.0"
+numpy = "^1.21.0"
+click = "^8.0.1"
+geckodriver-autoinstaller = "^0.1.0"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+dvsa-practicals = 'main:main'
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
