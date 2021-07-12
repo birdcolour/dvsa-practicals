@@ -9,6 +9,30 @@ import numpy as numpy
 from selenium import webdriver
 
 
+import requests
+import smtplib
+from email.mime.text import MIMEText
+
+
+# Telegram Setup
+ENABLE_TELEGRAM = True
+# Example "18299471:AAF0MlXjWgvNSQKjE48qd98J9LQI0Ekk" (Make sure to not include 'bot')
+TELEGRAM_BOT_TOKEN = "telegrambottoken"
+TELEGRAM_CHAT_ID = "telegramchatID"  # Example "-59977119"
+# More instructions on telegram bots here - https://core.telegram.org/bots
+
+# SMTP SETUP
+ENABLE_EMAIL = False
+smtp = {
+    "sender": "test-availability@example.com",  # SMTP sender address
+    "sender_title": "DVSA Test Check",  # SMTP sender name
+    "recipient": "recipient@example.com",  # Notification recipient
+    "server": "smtp.example.com",  # SMTP server address
+    "login": "server-admin@example.com",  # SMTP server login
+    "password": "password"  # SMTP server password
+}
+
+
 # Timing
 queue_pause = 10
 captcha_pause = 10
@@ -23,7 +47,8 @@ def new_start(*args, **kwargs):
     def preexec_function():
         os.setpgrp()
     default_Popen = subprocess.Popen
-    subprocess.Popen = functools.partial(subprocess.Popen, preexec_fn=preexec_function)
+    subprocess.Popen = functools.partial(
+        subprocess.Popen, preexec_fn=preexec_function)
     try:
         new_start.default_start(*args, **kwargs)
     finally:
@@ -46,6 +71,26 @@ def submit(driver, id_='driving-licence-submit'):
 
 
 def notify(msg):
+    msg += '\nHead over to https://driverpracticaltest.dvsa.gov.uk/ to book now'
+    if ENABLE_TELEGRAM:
+        send_text = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage?chat_id={TELEGRAM_CHAT_ID}&parse_mode=Markdown&text=' + msg
+        requests.get(send_text)
+    if ENABLE_EMAIL:
+        message={}
+        message = MIMEText(msg, 'plain', 'utf-8')
+        message['Subject'] = "Driving Test Availability Notification"
+        message['From'] = smtp['sender']
+        message['To'] = smtp['recipient']
+
+        # Port 587 works with most E-mail SMTP connections
+        server = smtplib.SMTP(smtp['server'], 587)
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+        server.login(smtp['login'], smtp['password'])
+        server.sendmail(smtp['sender'], smtp['recipient'],
+                        message.as_string())
+        server.quit()
     click.echo('\a')
     click.echo(msg)
 
@@ -58,7 +103,7 @@ def pause_on_captcha(driver):
     """If we got redirected to a Captcha, pause and notify for a human to solve."""
     driver.implicitly_wait(pageload_pause)
     if captcha_present(driver):
-        notify('Captcha detected, please solve to continue...')
+        print("Captcha Detected, Please solve to continue...")
         while captcha_present(driver):
             random_sleep(captcha_pause)
 
@@ -81,12 +126,15 @@ def setup(driver, licence, postcode, search_date, extended, special):
     # Fill out form 1 with licence, extended and special flags
     # Enter licence no
     driver.find_element_by_id('driving-licence').send_keys(licence)
-    driver.find_element_by_id('extended-test-' + ('yes' if extended else 'no')).click()
-    driver.find_element_by_id('special-needs-' + ('add' if special else 'none')).click()
+    driver.find_element_by_id(
+        'extended-test-' + ('yes' if extended else 'no')).click()
+    driver.find_element_by_id(
+        'special-needs-' + ('add' if special else 'none')).click()
     submit(driver)
 
     # Fill out form 2 with search date (DD/MM/YY), instructor number (not implemented)
-    driver.find_element_by_id('test-choice-calendar').send_keys(search_date.strftime('%d/%m/%Y'))
+    driver.find_element_by_id(
+        'test-choice-calendar').send_keys(search_date.strftime('%d/%m/%Y'))
     submit(driver)
 
     # Fill out form 3 with postcode
@@ -111,12 +159,14 @@ def check_for_slots(driver, notify_date):
         driver.find_elements_by_css_selector(headings + ' > h5'),
     ):
         try:
-            earliest = datetime.strptime(date_heading.text.split()[-1], '%d/%m/%Y')
+            earliest = datetime.strptime(
+                date_heading.text.split()[-1], '%d/%m/%Y')
         except ValueError:
             pass
         else:
             if earliest < notify_date:
-                notify(f'Earliest available test at {centre_heading.text} is on {earliest.isoformat()}.')
+                notify(
+                    f'Earliest available test at {centre_heading.text} is on {earliest.isoformat()}.')
 
 
 @click.command()
@@ -152,9 +202,12 @@ def main(licence, postcode, search_date, notify_date, extended, special):
     click.echo('Setting up...')
     setup(driver, licence, postcode, search_date, extended, special)
     click.echo('Searching...')
-    click.echo('The browser page will now refresh every few minutes, and check for new tests.')
-    click.echo('If you are notified of a test and you want to book it, press CTRL-C in the console to stop refreshing.')
-    click.echo("When you're done booking it, press CTRL-C in the console again to close the browser.")
+    click.echo(
+        'The browser page will now refresh every few minutes, and check for new tests.')
+    click.echo(
+        'If you are notified of a test and you want to book it, press CTRL-C in the console to stop refreshing.')
+    click.echo(
+        "When you're done booking it, press CTRL-C in the console again to close the browser.")
 
     while True:
         try:
