@@ -51,7 +51,9 @@ Run `dvsa-practicals --help` for more info on other parameters.
 
 ## Notifications
 
-This bot allows you to get notifications via email or telegram. To enable this set the 
+This bot allows you to get notifications via email or telegram.
+To make use of this feature kindly update all the fields with the relavant data in ```config.py```
+
 ```
 ENABLE_TELEGRAM=True #For telegram notifications
 ENABLE_EMAIL=True #For emails notificaitons

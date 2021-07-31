@@ -13,24 +13,7 @@ import requests
 import smtplib
 from email.mime.text import MIMEText
 
-
-# Telegram Setup
-ENABLE_TELEGRAM = True
-# Example "18299471:AAF0MlXjWgvNSQKjE48qd98J9LQI0Ekk" (Make sure to not include 'bot')
-TELEGRAM_BOT_TOKEN = "telegrambottoken"
-TELEGRAM_CHAT_ID = "telegramchatID"  # Example "-59977119"
-# More instructions on telegram bots here - https://core.telegram.org/bots
-
-# SMTP SETUP
-ENABLE_EMAIL = False
-smtp = {
-    "sender": "test-availability@example.com",  # SMTP sender address
-    "sender_title": "DVSA Test Check",  # SMTP sender name
-    "recipient": "recipient@example.com",  # Notification recipient
-    "server": "smtp.example.com",  # SMTP server address
-    "login": "server-admin@example.com",  # SMTP server login
-    "password": "password"  # SMTP server password
-}
+import config
 
 
 # Timing
@@ -72,24 +55,26 @@ def submit(driver, id_='driving-licence-submit'):
 
 def notify(msg):
     msg += '\nHead over to https://driverpracticaltest.dvsa.gov.uk/ to book now'
-    if ENABLE_TELEGRAM:
-        send_text = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage?chat_id={TELEGRAM_CHAT_ID}&parse_mode=Markdown&text=' + msg
-        requests.get(send_text)
-    if ENABLE_EMAIL:
-        message={}
+    if config.ENABLE_TELEGRAM:
+        response = requests.post(
+            url='https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendMessage'.format(
+                config.TELEGRAM_BOT_TOKEN),
+            data={'chat_id': config.TELEGRAM_CHAT_ID, 'text': msg}
+        ).json()
+    if config.ENABLE_EMAIL:
+        message = {}
         message = MIMEText(msg, 'plain', 'utf-8')
         message['Subject'] = "Driving Test Availability Notification"
-        message['From'] = smtp['sender']
-        message['To'] = smtp['recipient']
+        message['From'] = config.smtp['sender']
+        message['To'] = config.smtp['recipient']
 
         # Port 587 works with most E-mail SMTP connections
-        server = smtplib.SMTP(smtp['server'], 587)
+        server = smtplib.SMTP(config.smtp['server'], 587)
         server.ehlo()
         server.starttls()
         server.ehlo()
-        server.login(smtp['login'], smtp['password'])
-        server.sendmail(smtp['sender'], smtp['recipient'],
-                        message.as_string())
+        server.login(config.smtp['login'], config.smtp['password'])
+        server.sendmail(config.smtp['sender'], config.smtp['recipient'], message.as_string())
         server.quit()
     click.echo('\a')
     click.echo(msg)
@@ -103,7 +88,7 @@ def pause_on_captcha(driver):
     """If we got redirected to a Captcha, pause and notify for a human to solve."""
     driver.implicitly_wait(pageload_pause)
     if captcha_present(driver):
-        print("Captcha Detected, Please solve to continue...")
+        notify('Captcha detected, please solve to continue...')
         while captcha_present(driver):
             random_sleep(captcha_pause)
 
