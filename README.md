@@ -48,3 +48,21 @@ Notifications are implemented very simply, using the [bell character](https://en
 Consult your terminal's instructions on how to make this alert loud and obvious.
 
 Run `dvsa-practicals --help` for more info on other parameters.
+
+## Notifications
+
+This bot allows you to get notifications via email or telegram.
+To make use of this feature kindly update all the fields with the relavant data in ```config.py```
+
+```
+ENABLE_TELEGRAM=True #For telegram notifications
+ENABLE_EMAIL=True #For emails notificaitons
+```
+Please ensure to configure the ```SMTP``` details for email notifications and ```TELEGRAM_BOT_TOKEN & TELEGRAM_CHAT_ID``` for telegram notifications
+
+
+
+## Support
+
+Currently the bot supports new Driving Practical Test checks only. Feel free to contribute.
+Looking for new methods to allow checks/cancellations for existing bookings and the ability to auto rebook if available.

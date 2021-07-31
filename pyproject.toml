@@ -13,7 +13,7 @@ selenium = "^3.141.0"
 numpy = "^1.21.0"
 click = "^8.0.1"
 geckodriver-autoinstaller = "^0.1.0"
-
+requests = "*"
 [tool.poetry.dev-dependencies]
 
 [tool.poetry.scripts]
